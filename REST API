@@ -1,0 +1,63 @@
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+# Sample data (in-memory database using a dictionary)
+tasks = {
+    1: {"id": 1, "title": "Learn Flask", "description": "Study Flask framework for Python", "done": False},
+    2: {"id": 2, "title": "Build an API", "description": "Create a simple REST API with Flask", "done": False}
+}
+
+# Get all tasks
+@app.route('/tasks', methods=['GET'])
+def get_tasks():
+    return jsonify({"tasks": list(tasks.values())})
+
+# Get a specific task by ID
+@app.route('/tasks/<int:task_id>', methods=['GET'])
+def get_task(task_id):
+    task = tasks.get(task_id)
+    if task:
+        return jsonify(task)
+    else:
+        return jsonify({"error": "Task not found"}), 404
+
+# Create a new task
+@app.route('/tasks', methods=['POST'])
+def create_task():
+    data = request.json
+    new_id = max(tasks.keys()) + 1
+    new_task = {
+        "id": new_id,
+        "title": data['title'],
+        "description": data.get('description', ""),
+        "done": data.get('done', False)
+    }
+    tasks[new_id] = new_task
+    return jsonify(new_task), 201
+
+# Update an existing task
+@app.route('/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    task = tasks.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    data = request.json
+    task['title'] = data.get('title', task['title'])
+    task['description'] = data.get('description', task['description'])
+    task['done'] = data.get('done', task['done'])
+    return jsonify(task)
+
+# Delete a task
+@app.route('/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    task = tasks.pop(task_id, None)
+    if task:
+        return jsonify({"message": "Task deleted successfully"})
+    else:
+        return jsonify({"error": "Task not found"}), 404
+
+# Run the app
+if __name__ == '__main__':
+    app.run(debug=True)
